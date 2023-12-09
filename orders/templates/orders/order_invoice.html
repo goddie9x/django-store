@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Invoice Order - {{order.id}}</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    />
+  </head>
+  <body>
+    <div class="container my-4">
+      <h2>Mã đặt - {{order.id}}</h2>
+      <h4 class="mb-3">
+        Tới - {{order.user.first_name|default:order.user.username}}
+        {{order.user.last_name}}
+      </h4>
+      <h4 class="font-weight-light">{{order.address}}</h4>
+      <h4 class="font-weight-light mb-3">{{order.city}}, {{order.pin_code}}</h4>
+      <h5 class="font-weight-light mb-4">Placed on {{order.created}}</h5>
+      <hr />
+      <table class="table table-striped mt-4">
+        <thead class="table-dark">
+          <tr>
+            <td>Tên </td>
+            <td>Đơn giá</td>
+            <td>Số lượng</td>
+            <td>Tổng </td>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in order.items.all %}
+          <tr>
+            <td>{{o.product.name}}</td>
+            <td>{{o.product.price}}VNĐ</td>
+            <td>{{o.quantity}}</td>
+            <td>{{o.total}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2"></td>
+            <td class="text-right">Tổng tiền -</td>
+            <td>
+              <b>{{order.total_price}}VNĐ</b>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+      <h5>
+        Trạng thái thanh toán - {% if order.paid %}
+        <span class="badge badge-success">đã thanh toán</span>
+        {% else %}
+        <span class="badge badge-danger">Đang chờ thanh toán</span>
+        {% endif %}
+      </h5>
+      <h5>Phương thức thanh toán - Thanh toán khi giao hàng</h5>
+      <h5>Trạng thái - {{order.status}}</h5>
+    </div>
+    <footer class="text-center d-print-none">
+      <button class="btn btn-primary" onclick="window.print()">In </button>
+      <button class="btn btn-danger" onclick="history.back()">Trở lại</button>
+    </footer>
+  </body>
+</html>
