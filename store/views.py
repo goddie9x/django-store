@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.views import generic
-from store.models import Product, Category
+from store.models import Invoice, Product, Category
 from django_filters.views import FilterView
 from store.filters import ProductFilter
 from cart.forms import CartForm
@@ -43,3 +43,11 @@ class CategoriesList(generic.ListView):
     template_name = 'store/categories_list.html'
     context_object_name = 'categories'
     queryset = Category.objects.all().annotate(num_products=Count('products'))
+class PrintableInvoiceView(generic.DetailView):
+    model = Invoice
+    template_name = 'store/printable_invoice.html'
+    
+    def get(self, request, *args, **kwargs):
+        invoice_id = kwargs.get('invoice_id')
+        invoice = Invoice.objects.get(pk=invoice_id)
+        return render(request, self.template_name, {'invoice': invoice})

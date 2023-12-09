@@ -1,8 +1,10 @@
 from django.db import models
+from django.dispatch import receiver
 from django.urls import reverse
-
-# Create your models here.
-
+from django.utils import timezone
+from django.db.models.signals import pre_save
+from django.core.exceptions import ValidationError
+from django.contrib import messages
 
 class Category(models.Model):
     name = models.CharField(max_length=50, null=False, blank=False)
@@ -30,7 +32,8 @@ class Product(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     image = models.ImageField(upload_to='media/products/%Y/%m/%d/', blank=True)
-    availibility = models.BooleanField(null=False, default=True)
+    availability = models.BooleanField(null=False, default=True)
+    quantity = models.PositiveIntegerField(default=0)
 
     class Meta:
         index_together = ('id', 'slug')
@@ -41,3 +44,34 @@ class Product(models.Model):
 
     def get_absolute_url(self):
         return reverse('store:product_details', kwargs={'slug': self.slug})
+
+class Supplier(models.Model):
+    name = models.CharField(max_length=255)
+
+class Invoice(models.Model):
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
+    created = models.DateTimeField(default=timezone.now)
+    
+    def total_price(self):
+        return sum(item.total_price() for item in self.items.all())
+class InvoiceItem(models.Model):
+    invoice = models.ForeignKey(Invoice, related_name='items', on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def total_price(self):
+        return self.quantity * self.price
+    
+@receiver(pre_save, sender=InvoiceItem)
+def update_product_quantity(sender, instance, **kwargs):
+    product = instance.product
+    old_quantity = 0
+    if instance.pk:
+        old_item = InvoiceItem.objects.get(pk=instance.pk)
+        old_quantity = old_item.quantity
+
+    quantity_difference = instance.quantity - old_quantity
+    product = instance.product
+    product.quantity += quantity_difference
+    product.save()
